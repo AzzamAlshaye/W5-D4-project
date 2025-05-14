@@ -88,12 +88,10 @@
 
     // ── floor & platforms ──────────────────────────────────────────────────────
     this.platforms = this.physics.add.staticGroup();
-    // full-width floor
     this.platforms
       .create(WORLD_WIDTH / 2, 584, "ground")
       .setDisplaySize(WORLD_WIDTH, 32)
       .refreshBody();
-    // floating platforms
     levelConfigs[currentLevel].platforms.forEach((p) => {
       const plt = this.platforms.create(p.x, p.y, "ground");
       if (p.scale) plt.setScale(p.scale).refreshBody();
@@ -123,8 +121,6 @@
 
     // ── trophies & score ───────────────────────────────────────────────────────
     const tcfg = levelConfigs[currentLevel].trophies;
-
-    // build a fresh trophies group each level
     this.trophies = this.physics.add.group();
     for (let i = 0; i <= tcfg.repeat; i++) {
       const x = tcfg.startX + i * tcfg.stepX;
@@ -133,7 +129,6 @@
         .setBounceY(Phaser.Math.FloatBetween(0.4, 0.4))
         .setScale(0.2);
     }
-
     this.physics.add.collider(this.trophies, this.platforms);
     this.physics.add.overlap(
       this.player,
@@ -172,24 +167,7 @@
     });
     this.physics.add.collider(this.enemies, this.platforms);
 
-    // ── win flag at proper spot ────────────────────────────────────────────────
-    const floorTop = 568; // 584 - half platform height
-    const flagX = WORLD_WIDTH - 50;
-    this.flag = this.physics.add.staticImage(flagX, 0, "flag").setScale(0.24);
-    const halfFlag = this.flag.displayHeight / 2;
-    this.flag.setY(floorTop - halfFlag);
-    this.flag.refreshBody();
-
-    // draw border around visible flag
-    const b = this.flag.getBounds();
-    this.add
-      .graphics({ lineStyle: { width: 2, color: 0xff0000 } })
-      .setScrollFactor(1)
-      .strokeRect(b.x, b.y, b.width, b.height);
-
-    this.physics.add.overlap(this.player, this.flag, reachFlag, null, this);
-
-    // ── stomp vs. hit ──────────────────────────────────────────────────────────
+    // award 2 points on stomp, update score
     this.physics.add.overlap(
       this.player,
       this.enemies,
@@ -197,6 +175,13 @@
         if (player.body.velocity.y > 0 && player.y < enemy.y) {
           enemy.disableBody(true, true);
           player.setVelocityY(-300);
+          // add 2 points for killing a Goomba
+          totalCollected += 2;
+          this.scoreText.setText(
+            `Level ${
+              currentLevel + 1
+            } – Collected: ${collectedThisLevel} (Total: ${totalCollected})`
+          );
         } else {
           triggerDeath.call(this);
         }
@@ -205,10 +190,23 @@
       this
     );
 
+    // ── win flag at proper spot ────────────────────────────────────────────────
+    const floorTop = 568;
+    const flagX = WORLD_WIDTH - 50;
+    this.flag = this.physics.add.staticImage(flagX, 0, "flag").setScale(0.24);
+    const halfFlag = this.flag.displayHeight / 2;
+    this.flag.setY(floorTop - halfFlag);
+    this.flag.refreshBody();
+    const b = this.flag.getBounds();
+    this.add
+      .graphics({ lineStyle: { width: 2, color: 0xff0000 } })
+      .setScrollFactor(1)
+      .strokeRect(b.x, b.y, b.width, b.height);
+    this.physics.add.overlap(this.player, this.flag, reachFlag, null, this);
+
     // ── input & HUD ───────────────────────────────────────────────────────────
     this.cursors = this.input.keyboard.createCursorKeys();
     this.input.keyboard.on("keydown-R", () => this.scene.restart());
-
     this.startTime = this.time.now;
     this.timerText = this.add
       .text(16, 16, "Time: 0s", { fontSize: "24px", fill: "#ffffff" })
@@ -227,7 +225,6 @@
   function update() {
     if (this.isDead || this.levelComplete) return;
 
-    // movement
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-160).anims.play("left", true);
     } else if (this.cursors.right.isDown) {
@@ -238,13 +235,10 @@
     if (this.cursors.up.isDown && this.player.body.touching.down) {
       this.player.setVelocityY(-330);
     }
-
-    // fall‐death
     if (this.player.y > WORLD_HEIGHT) {
       triggerDeath.call(this);
     }
 
-    // update timer
     const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
     this.timerText.setText(`Time: ${elapsed}s`);
   }
@@ -282,7 +276,11 @@
         cam.scrollX + cam.width / 2,
         cam.height / 2,
         "💀 You died! Click to retry",
-        { fontSize: "32px", fill: "#ffffff", backgroundColor: "#000000" }
+        {
+          fontSize: "32px",
+          fill: "#ffffff",
+          backgroundColor: "#000000",
+        }
       )
       .setOrigin(0.5)
       .setInteractive()
@@ -293,7 +291,6 @@
     if (this.levelComplete) return;
     this.levelComplete = true;
     this.physics.pause();
-
     const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
     try {
       await fetch(`${apiBase}/${userId}`, {
@@ -304,7 +301,6 @@
     } catch (e) {
       console.error(e);
     }
-
     const cam = this.cameras.main;
     const isLast = currentLevel >= levelConfigs.length - 1;
     const msg = isLast
@@ -312,7 +308,6 @@
       : `🏁 Level ${
           currentLevel + 1
         } complete!\nTime: ${elapsed}s\nClick to continue.`;
-
     this.add
       .text(cam.scrollX + cam.width / 2, cam.height / 2, msg, {
         fontSize: "32px",

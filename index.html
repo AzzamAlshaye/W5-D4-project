@@ -17,6 +17,7 @@
       type="image/x-icon"
     />
     <link rel="stylesheet" href="./assests/cs/style.css" />
+    <link rel="stylesheet" href="./assests/cs/game.css" />
     <title>Home | Blog Website</title>
   </head>
   <body>
@@ -81,27 +82,9 @@
 
     <!-- New-post form (hidden if not logged-in) -->
     <div class="form-div py-5 mt-5" id="form-div">
-      <div class="form-card">
-        <label for="li-textarea">Text</label>
-        <input
-          id="li-textarea"
-          type="text"
-          class="form-control mb-2"
-          required
-        />
-        <label for="li-image">Image URL</label>
-        <input id="li-image" type="url" class="form-control mb-3" required />
-        <button class="btn btn-primary w-100 mb-2 fw-semibold" id="submit">
-          Submit
-        </button>
-      </div>
+      <section id="game-section"><div id="game-container"></div></section>
     </div>
 
-    <section class="container mt-4">
-      <div class="row" id="container-main"></div>
-    </section>
-
-    <script src="./assests/js/main.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
       integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
@@ -112,8 +95,10 @@
       integrity="sha384-RuyvpeZCxMJCqVUGFI0Do1mQrods/hhxYlcVfGPOfQtPJh0JCw12tUAZ/Mv10S7D"
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+    <!-- Your game logic -->
+    <script src="./assests/js/game.js"></script>
     <script>
-      // Login display logic
       const userLi = document.getElementById("nav-user");
       const logoutBtn = document.getElementById("nav-logout");
       const loginBtn = document.getElementById("nav-login");
@@ -133,12 +118,6 @@
         localStorage.removeItem("username");
         window.location.reload();
       }
-
-      // hook the button
-      logoutBtn.addEventListener("click", (e) => {
-        e.preventDefault(); // if it's an <a> tag
-        logout();
-      });
     </script>
   </body>
 </html>

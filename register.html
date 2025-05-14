@@ -13,68 +13,97 @@
     <link
       rel="shortcut icon"
       href="./assests/images/icon.webp"
-      type="image/x-icon"
-    />
+      type="image/x-icon"/>
     <link href="./assests/cs/style.css" rel="stylesheet" />
   </head>
   <body class="m-0 p-0" style="height: 100vh">
     <div class="container">
       <div class="d-flex flex-column h-100 align-items-center">
-        <img
-          src="./assests/images/icon.webp"
-          alt=""
-          style="height: 15rem; width: 15rem"
-        />
+
+  
         <div class="col-sm-11 col-lg-5 col-xl-5">
           <div class="card shadow-card w-100">
             <div class="card-body p-4">
+              <img
+              src="./assests/images/1.png"
+              alt=""
+              style="height: 15rem; width: 15rem ; align-items: center;
+        position: relative;
+        left: 90px;
+        bottom:  10px;
+              "
+            />
               <h2 class="card-title text-center mb-4 fw-semibold">
-                Sign Up to The Website
+                Welcome aboard! <br>Your adventure starts here!"
               </h2>
 
               <div class="mb-3">
                 <label for="su-username" class="form-label fw-semibold">
-                  Username
+            Username
                 </label>
                 <input
                   id="su-username"
                   class="form-control input-theme"
                   required
-                />
+                  placeholder="Username"
+                  style="border: none;
+                    background-color:#dfdfde ;
+                    height: 50px;
+                    border-radius: 15px;
+                    "/>
+           
                 <div class="invalid-feedback">Must be &gt;4 characters</div>
               </div>
 
               <div class="mb-3">
                 <label for="su-password" class="form-label fw-semibold">
-                  Password
+              Password
                 </label>
                 <input
                   id="su-password"
                   type="password"
                   class="form-control input-theme"
                   required
+                  placeholder="Password"
+                  style="border: none;
+                    background-color:#dfdfde ;
+                    height: 50px;
+                    border-radius: 15px;
+                    "
                 />
                 <div class="invalid-feedback">Must be &gt;3 characters</div>
               </div>
 
               <div class="mb-3">
                 <label for="confirmPassword" class="form-label fw-semibold">
-                  Confirm Password
+         confirm Password
                 </label>
                 <input
                   id="confirmPassword"
                   type="password"
                   class="form-control input-theme"
                   required
+                  placeholder="confirm Password"
+                  style="border: none;
+                    background-color:#dfdfde ;
+                    height: 50px;
+                    border-radius: 15px;
+                    "
                 />
                 <div class="invalid-feedback">Must be &gt;3 characters</div>
               </div>
 
-              <button id="su-submit" class="btn-main w-100 mb-2 fw-semibold">
+              <button id="su-submit" class="btn-main w-100 mb-2 fw-semibold"
+              style="border: none;
+              background-color:#900C3F ;
+              color: #fff;
+              height: 50px;
+              border-radius: 15px;">
                 Register
               </button>
-              <a href="./login.html" class="btn btn-outline-secondary w-100">
-                Login
+              <a href="./login.html" class="btn btn-outline-secondary w-100" 
+              style="border: none;">
+               have an account? Login
               </a>
             </div>
           </div>

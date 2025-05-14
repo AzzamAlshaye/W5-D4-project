@@ -137,6 +137,10 @@
         return void (window.location.href = "./login.html");
       }
 
+      // reset timer
+      this.startTime = this.time.now;
+
+      // background fixed
       this.add
         .tileSprite(0, 0, this.scale.width, this.scale.height, "sky")
         .setOrigin(0)
@@ -145,10 +149,10 @@
       this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
       this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
+      // build platforms...
       const img = this.textures.get("ground").getSourceImage();
       const scaleF = 45 / img.height;
       const tileW = img.width * scaleF;
-
       this.platforms = this.physics.add.staticGroup();
       for (let i = 0; i < Math.ceil(WORLD_WIDTH / tileW); i++) {
         this.platforms
@@ -157,7 +161,6 @@
           .setDisplaySize(tileW, 45)
           .refreshBody();
       }
-
       levelConfigs[lvl].platforms.forEach((p) => {
         const count = p.tileCount || 1;
         const total = tileW * count;
@@ -171,6 +174,7 @@
         }
       });
 
+      // player setup...
       this.player = this.physics.add
         .sprite(100, 450, "player")
         .setBounce(0.2)
@@ -192,6 +196,7 @@
         repeat: -1,
       });
 
+      // trophies & enemies...
       const t = levelConfigs[lvl].trophies;
       this.trophies = this.physics.add.group();
       for (let i = 0; i <= t.repeat; i++) {
@@ -232,6 +237,7 @@
         this
       );
 
+      // flag overlap...
       const floorY = WORLD_HEIGHT - 45;
       this.flag = this.physics.add
         .staticImage(WORLD_WIDTH - 50, floorY, "flag")
@@ -245,26 +251,34 @@
         this
       );
 
+      // HUD
       this.levelText = this.add
         .text(16, 16, `Level ${lvl + 1}`, { fontSize: "24px", fill: "#fff" })
-        .setScrollFactor(0);
-      this.restartText = this.add
-        .text(this.scale.width - 16, 16, "Press R to restart", {
-          fontSize: "24px",
-          fill: "#fff",
-        })
-        .setOrigin(1, 0)
         .setScrollFactor(0);
       this.scoreText = this.add
         .text(16, 48, "0 pts", { fontSize: "24px", fill: "#fff" })
         .setScrollFactor(0);
-      this.startTime = this.time.now;
       this.timerText = this.add
         .text(16, 80, "Time: 0s", { fontSize: "24px", fill: "#fff" })
         .setScrollFactor(0);
 
+      const w = this.scale.width;
+      this.controlsText = this.add
+        .text(w - 16, 16, "R: Restart\nEsc: Menu", {
+          fontSize: "18px",
+          fill: "#fff",
+          align: "right",
+        })
+        .setOrigin(1, 0)
+        .setScrollFactor(0);
+      // R to retry
       this.input.keyboard.once("keydown-R", () => {
         this.scene.restart({ level: lvl });
+      });
+
+      // ESC to go back to menu (and kill this scene)
+      this.input.keyboard.on("keydown-ESC", () => {
+        this.scene.start("MenuScene");
       });
 
       this.isDead = false;
@@ -275,18 +289,19 @@
     update() {
       if (this.isDead || this.levelComplete) return;
 
-      const c = this.input.keyboard.createCursorKeys();
-      if (c.left.isDown) {
+      const cursors = this.input.keyboard.createCursorKeys();
+      if (cursors.left.isDown) {
         this.player.setVelocityX(-160).anims.play("left", true);
-      } else if (c.right.isDown) {
+      } else if (cursors.right.isDown) {
         this.player.setVelocityX(160).anims.play("right", true);
       } else {
         this.player.setVelocityX(0).anims.play("turn");
       }
-      if (c.up.isDown && this.player.body.touching.down) {
+      if (cursors.up.isDown && this.player.body.touching.down) {
         this.player.setVelocityY(-330);
       }
 
+      // update timer display
       const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
       this.timerText.setText(`Time: ${elapsed}s`);
     }
@@ -304,6 +319,7 @@
           fill: "#fff",
         })
         .setOrigin(0.5);
+
       const data = await fetch(apiBase).then((r) => r.json());
       const makeList = (lvl) =>
         data
@@ -324,16 +340,17 @@
           fill: "#fff",
         })
         .setOrigin(0.5);
-      lb1
-        .slice(0, 10)
-        .forEach((u, i) =>
-          this.add.text(
-            width * 0.1,
-            160 + i * 24,
-            `${i + 1}. ${u.name} — ${u.pts}pts — ${u.time}s`,
-            { font: "20px Arial", fill: "#fff" }
-          )
-        );
+      lb1.slice(0, 10).forEach((u, i) =>
+        this.add.text(
+          width * 0.1,
+          160 + i * 24,
+          `${i + 1}. ${u.name} — ${u.pts}pts — ${u.time}s`,
+          {
+            font: "20px Arial",
+            fill: "#fff",
+          }
+        )
+      );
 
       this.add
         .text(width * 0.75, 120, "Level 2", {
@@ -341,16 +358,17 @@
           fill: "#fff",
         })
         .setOrigin(0.5);
-      lb2
-        .slice(0, 10)
-        .forEach((u, i) =>
-          this.add.text(
-            width * 0.6,
-            160 + i * 24,
-            `${i + 1}. ${u.name} — ${u.pts}pts — ${u.time}s`,
-            { font: "20px Arial", fill: "#fff" }
-          )
-        );
+      lb2.slice(0, 10).forEach((u, i) =>
+        this.add.text(
+          width * 0.6,
+          160 + i * 24,
+          `${i + 1}. ${u.name} — ${u.pts}pts — ${u.time}s`,
+          {
+            font: "20px Arial",
+            fill: "#fff",
+          }
+        )
+      );
 
       this.add
         .text(width / 2, height - 40, "← Back", {
@@ -391,7 +409,6 @@
     }
   }
 
-  // make sure this is async so you can await your PUTs
   async function reachFlag(lvl) {
     if (this.levelComplete) return;
     this.levelComplete = true;
@@ -417,27 +434,19 @@
       )
       .setOrigin(0.5);
 
-    // store points
-    try {
-      await fetch(`${apiBase}/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          [`level${lvl + 1}Points`]: collectedThisLevel,
-        }),
-      });
+    // send points
+    await fetch(`${apiBase}/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [`level${lvl + 1}Points`]: collectedThisLevel }),
+    }).catch(console.error);
 
-      // store time
-      await fetch(`${apiBase}/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          [`level${lvl + 1}Time`]: elapsed,
-        }),
-      });
-    } catch (err) {
-      console.error(err);
-    }
+    // send time
+    await fetch(`${apiBase}/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [`level${lvl + 1}Time`]: elapsed }),
+    }).catch(console.error);
 
     this.input.keyboard.once("keydown-R", () => {
       const next = lvl + 1;

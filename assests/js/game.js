@@ -76,17 +76,16 @@
       { frameWidth: 32, frameHeight: 48 }
     );
     this.load.image("goomba", "./assests/images/goomba.png");
+    this.load.image("flag", "./assests/images/flag.png");
   }
 
   function create() {
-    // 1) background
+    // ── background/world/camera ────────────────────────────────────────────────
     this.add.tileSprite(0, 0, 800, 600, "sky").setOrigin(0).setScrollFactor(0);
-
-    // 2) world bounds & camera
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // 3) floor & platforms
+    // ── floor & platforms ──────────────────────────────────────────────────────
     this.platforms = this.physics.add.staticGroup();
     this.platforms
       .create(WORLD_WIDTH / 2, 584, "ground")
@@ -97,7 +96,7 @@
       if (p.scale) plt.setScale(p.scale).refreshBody();
     });
 
-    // 4) player
+    // ── player ─────────────────────────────────────────────────────────────────
     this.player = this.physics.add
       .sprite(100, 450, "player")
       .setBounce(0.2)
@@ -111,11 +110,7 @@
       frameRate: 10,
       repeat: -1,
     });
-    this.anims.create({
-      key: "turn",
-      frames: [{ key: "player", frame: 4 }],
-      frameRate: 20,
-    });
+    this.anims.create({ key: "turn", frames: [{ key: "player", frame: 4 }] });
     this.anims.create({
       key: "right",
       frames: this.anims.generateFrameNumbers("player", { start: 5, end: 8 }),
@@ -123,16 +118,14 @@
       repeat: -1,
     });
 
-    // 5) trophies
+    // ── trophies & score ───────────────────────────────────────────────────────
     const tcfg = levelConfigs[currentLevel].trophies;
     this.trophies = this.physics.add.group({
       key: "trophy",
       repeat: tcfg.repeat,
       setXY: { x: tcfg.startX, y: tcfg.startY, stepX: tcfg.stepX },
     });
-    this.trophies.children.iterate((t) => {
-      t.setBounceY(Phaser.Math.FloatBetween(0.4, 0.4)).setScale(0.2);
-    });
+    this.trophies.children.iterate((t) => t.setBounceY(0.4).setScale(0.2));
     this.physics.add.collider(this.trophies, this.platforms);
     this.physics.add.overlap(
       this.player,
@@ -142,31 +135,43 @@
       this
     );
 
-    // 6) Goombas
+    this.scoreText = this.add
+      .text(16, 48, `Level ${currentLevel + 1} – Collected: 0 (Total: 0)`, {
+        fontSize: "24px",
+        fill: "#ffffff",
+      })
+      .setScrollFactor(0);
+
+    // ── Goombas ────────────────────────────────────────────────────────────────
     this.enemies = this.physics.add.group();
     levelConfigs[currentLevel].enemies.forEach((pos) => {
       const e = this.enemies
         .create(pos.x, pos.y, "goomba")
         .setScale(0.1)
         .setCollideWorldBounds(true);
-      e.setVelocityX(Phaser.Math.Between(-80, 50));
+      const speed = Phaser.Math.Between(50, 100);
+      const dir = Phaser.Math.Between(0, 1) ? 1 : -1;
+      e.setVelocityX(speed * dir);
       e.setVelocityY(-Phaser.Math.Between(50, 100));
-      e.setBounce(1, 0.3);
       e.body.allowGravity = true;
+      e.setBounce(1, 0.3);
     });
     this.physics.add.collider(this.enemies, this.platforms);
 
-    // 7) single overlap for stomp vs. hit
+    // ── flag ───────────────────────────────────────────────────────────────────
+    const flagX = WORLD_WIDTH - 50;
+    this.flag = this.physics.add.staticSprite(flagX, 518, "flag").setScale(0.5);
+    this.physics.add.overlap(this.player, this.flag, reachFlag, null, this);
+
+    // ── stomp vs hit ───────────────────────────────────────────────────────────
     this.physics.add.overlap(
       this.player,
       this.enemies,
       (player, enemy) => {
-        // if falling and player's center is above enemy's center → stomp
         if (player.body.velocity.y > 0 && player.y < enemy.y) {
           enemy.disableBody(true, true);
           player.setVelocityY(-300);
         } else {
-          // any other overlap → player dies
           triggerDeath.call(this);
         }
       },
@@ -174,11 +179,17 @@
       this
     );
 
-    // 8) controls & HUD
+    // ── input & HUD ───────────────────────────────────────────────────────────
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.scoreText = this.add
-      .text(16, 16, `Level 1 – Collected: 0 (Total: 0)`, {
-        fontSize: "24px",
+    this.input.keyboard.on("keydown-R", () => this.scene.restart());
+
+    this.startTime = this.time.now;
+    this.timerText = this.add
+      .text(16, 16, "Time: 0s", { fontSize: "24px", fill: "#ffffff" })
+      .setScrollFactor(0);
+    this.add
+      .text(600, 16, "Press R to restart", {
+        fontSize: "18px",
         fill: "#ffffff",
       })
       .setScrollFactor(0);
@@ -204,6 +215,9 @@
     if (this.player.y > WORLD_HEIGHT) {
       triggerDeath.call(this);
     }
+
+    const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
+    this.timerText.setText(`Time: ${elapsed}s`);
   }
 
   // ─── handlers ────────────────────────────────────────────────────────────────
@@ -217,15 +231,24 @@
         currentLevel + 1
       } – Collected: ${collectedThisLevel} (Total: ${totalCollected})`
     );
-    await updateTrophiesOnServer(totalCollected);
+    try {
+      await fetch(`${apiBase}/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trophies: totalCollected }),
+      });
+    } catch (e) {
+      console.error(e);
+    }
 
     const needed = levelConfigs[currentLevel].trophies.repeat + 1;
     if (collectedThisLevel >= needed) {
-      triggerLevelComplete.call(this);
+      // optionally auto‐advance or leave win until flag
     }
   }
 
   function triggerDeath() {
+    if (this.isDead) return;
     this.isDead = true;
     this.physics.pause();
     this.player.setTint(0xff0000);
@@ -235,60 +258,60 @@
         cam.scrollX + cam.width / 2,
         cam.height / 2,
         "💀 You died! Click to retry",
-        { fontSize: "32px", fill: "#ffffff", backgroundColor: "#000" }
+        {
+          fontSize: "32px",
+          fill: "#ffffff",
+          backgroundColor: "#000000",
+        }
       )
       .setOrigin(0.5)
       .setInteractive()
-      .on("pointerdown", () => {
-        currentLevel = 0;
-        collectedThisLevel = 0;
-        totalCollected = 0;
-        this.scene.restart();
-      });
+      .on("pointerdown", () => this.scene.restart());
   }
 
-  function triggerLevelComplete() {
+  async function reachFlag() {
+    if (this.levelComplete) return;
     this.levelComplete = true;
     this.physics.pause();
-    const cam = this.cameras.main;
-    const isLast = currentLevel >= levelConfigs.length - 1;
-    const text = isLast
-      ? "🎉 All levels done! Click to try again"
-      : `✅ Level ${currentLevel + 1} complete!`;
 
-    const msg = this.add
-      .text(cam.scrollX + cam.width / 2, cam.height / 2, text, {
-        fontSize: "32px",
-        fill: "#fff",
-        backgroundColor: "#000",
-      })
-      .setOrigin(0.5);
-
-    if (isLast) {
-      msg.setInteractive().on("pointerdown", () => {
-        currentLevel = 0;
-        collectedThisLevel = 0;
-        totalCollected = 0;
-        this.scene.restart();
-      });
-    } else {
-      this.time.delayedCall(2000, () => {
-        currentLevel++;
-        collectedThisLevel = 0;
-        this.scene.restart();
-      });
-    }
-  }
-
-  async function updateTrophiesOnServer(count) {
+    const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
     try {
       await fetch(`${apiBase}/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trophies: count }),
+        body: JSON.stringify({ time: elapsed }),
       });
-    } catch (err) {
-      console.error("Failed to update trophies:", err);
+    } catch (e) {
+      console.error(e);
     }
+
+    const cam = this.cameras.main;
+    const isLast = currentLevel >= levelConfigs.length - 1;
+    const msg = isLast
+      ? `🎉 Game over! Your time: ${elapsed}s\nClick to restart.`
+      : `🏁 Level ${
+          currentLevel + 1
+        } complete!\nTime: ${elapsed}s\nClick to continue.`;
+
+    this.add
+      .text(cam.scrollX + cam.width / 2, cam.height / 2, msg, {
+        fontSize: "32px",
+        fill: "#ffffff",
+        backgroundColor: "#000000",
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setInteractive()
+      .on("pointerdown", () => {
+        if (isLast) {
+          currentLevel = 0;
+          totalCollected = 0;
+        } else {
+          currentLevel++;
+        }
+        collectedThisLevel = 0;
+        this.levelComplete = false;
+        this.scene.restart();
+      });
   }
 })();

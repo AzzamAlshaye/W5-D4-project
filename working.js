@@ -16,12 +16,11 @@
       platforms: [
         { x: 400, y: 450 },
         { x: 700, y: 300 },
-        { x: 1200, y: 450 },
       ],
       trophies: { repeat: 5, startX: 150, startY: 0, stepX: 200 },
       enemies: [
-        { x: 400, y: 350 },
-        { x: 1200, y: 350 },
+        { x: 300, y: 520 },
+        { x: 600, y: 520 },
       ],
     },
     {
@@ -59,7 +58,10 @@
 
   function preload() {
     this.load.tilemapTiledJSON; // ensure Phaser.TileSprite plugin is loaded
-    this.load.image("sky", "./assests/images/gameBackGround.png");
+    this.load.image(
+      "sky",
+      "https://images3.alphacoders.com/126/thumb-1920-1269904.png"
+    );
     this.load.image(
       "ground",
       "https://labs.phaser.io/assets/sprites/platform.png"
@@ -130,7 +132,7 @@
       setXY: { x: tcfg.startX, y: tcfg.startY, stepX: tcfg.stepX },
     });
     this.trophies.children.iterate((t) => {
-      t.setBounceY(Phaser.Math.FloatBetween(0.4, 0.4)).setScale(0.2);
+      t.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8)).setScale(0.2);
     });
     this.physics.add.collider(this.trophies, this.platforms);
     this.physics.add.overlap(
@@ -147,17 +149,11 @@
       const e = this.enemies
         .create(pos.x, pos.y, "goomba")
         .setScale(0.1)
-        .setCollideWorldBounds(true);
-      // give it a random left/right patrol speed
-      e.setVelocityX(Phaser.Math.Between(-80, 80));
-
-      // (optional) give it an initial upward kick so it immediately bounces:
-      e.setVelocityY(-Phaser.Math.Between(50, 100));
-      e.body.allowGravity = true;
-      e.setBounce(1, 0.4);
+        .setCollideWorldBounds(true)
+        .setVelocityX(Phaser.Math.Between(-80, 80));
+      e.body.allowGravity = false;
+      e.setBounce(1, 0);
     });
-    // allow Goombas to land & bounce on platforms:
-    this.physics.add.collider(this.enemies, this.platforms);
     this.physics.add.collider(this.player, this.enemies, hitEnemy, null, this);
 
     // 8) controls & HUD
@@ -216,7 +212,7 @@
   function hitEnemy(player, enemy) {
     if (player.body.velocity.y > 0) {
       enemy.disableBody(true, true);
-      player.setVelocityY(-150);
+      player.setVelocityY(-200);
     } else {
       triggerDeath.call(this);
     }

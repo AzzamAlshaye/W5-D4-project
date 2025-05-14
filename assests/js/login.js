@@ -1,5 +1,5 @@
 // login.js
-const apiUrl = "https://68219a92259dad2655afc3d3.mockapi.io";
+const apiUrl = "https://68243c9365ba0580339965d9.mockapi.io";
 const usernameInput = document.getElementById("li-username");
 const passwordInput = document.getElementById("li-password");
 const submitButton = document.getElementById("li-submit");
@@ -43,9 +43,10 @@ submitButton.addEventListener("click", async (e) => {
     // 4️⃣ Success!
     // Save username to localStorage:
     localStorage.setItem("username", username);
+    localStorage.setItem("userId", userRecord.id);
 
     alert("Login successful!");
-    window.location.href = "./index.html";
+    window.location.href = "./game.html";
   } catch (err) {
     console.error("Login error:", err);
     alert("An error occurred. Check console for details.");

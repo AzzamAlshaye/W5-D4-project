@@ -13,7 +13,7 @@
     />
     <link
       rel="shortcut icon"
-      href="./assests/images/icon.webp"
+      href="./assests/images/logo.webp"
       type="image/x-icon"
     />
     <link href="./assests/cs/style.css" rel="stylesheet" />
@@ -22,46 +22,68 @@
   <body class="m-0 p-0" style="height: 100vh">
     <div class="container h-100">
       <div class="d-flex flex-column h-100 align-items-center">
-        <img
-          src="./assests/images/icon.webp"
-          alt=""
-          style="height: 15rem; width: 15rem"
-        />
+       
         <!-- full width on xs, 50% on ≥992px, 33% on ≥1200px -->
         <div class="col-sm-11 col-lg-5 col-xl-5">
-          <div class="card shadow-card w-100">
-            <div class="card-body p-4">
-              <form id="loginForm">
+          <div class="card shadow  w-100 ">
+            <div class="card-body p-4 d-flex flex-column align-items-center">
+              <form id="loginForm  ">
+                <img
+                src="./assests/images/1.png"
+                alt=""
+                style="height: 15rem; width: 15rem ; align-items: center;
+          position: relative;
+          left: 90px;
+          bottom:  10px;
+                "
+              />
                 <h2 class="card-title text-center mb-4 fw-semibold">
-                  Log-In to use The Website
+                  
+                  Adventure awaits you! <br> Login and become the hero!
                 </h2>
-
-                <div class="mb-3">
+                <div class="">
                   <label for="li-username" class="form-label fw-semibold">
-                    Username
+                 Username
                   </label>
                   <input
                     id="li-username"
+                    placeholder="Username"
                     class="form-control input-theme"
-                    required/>
+                    required 
+                    style="border: none;
+                    background-color:#dfdfde ;
+                    height: 50px;
+                    border-radius: 15px;
+                    "/>
+                    
                 </div>
 
                 <div class="mb-3">
                   <label for="li-password" class="form-label fw-semibold">
-                    Password
+             Password
                   </label>
                   <input
                     id="li-password"
                     type="password"
                     class="form-control input-theme"
                     required
+                    placeholder="Password"
+                    style="border: none;
+                    background-color:#dfdfde;
+                    height: 50px;
+                    border-radius: 15px;"
                   />
                 </div>
 
                 <button
                   type="submit"
                   id="li-submit"
-                  class="btn-main w-100 mb-2 fw-semibold"
+                  class="btn w-100 mb-2 fw-semibold"
+                  style="border: none;
+                  background-color:#900C3F ;
+                  color: #fff;
+                  height: 50px;
+                  border-radius: 15px;"
                 >
                   Log In
                 </button>

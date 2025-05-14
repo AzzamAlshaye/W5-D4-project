@@ -82,15 +82,19 @@
   function create() {
     // ── background/world/camera ────────────────────────────────────────────────
     this.add.tileSprite(0, 0, 800, 600, "sky").setOrigin(0).setScrollFactor(0);
+
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // ── floor & platforms ──────────────────────────────────────────────────────
     this.platforms = this.physics.add.staticGroup();
+    // full-width floor
     this.platforms
       .create(WORLD_WIDTH / 2, 584, "ground")
       .setDisplaySize(WORLD_WIDTH, 32)
       .refreshBody();
+
+    // floating platforms
     levelConfigs[currentLevel].platforms.forEach((p) => {
       const plt = this.platforms.create(p.x, p.y, "ground");
       if (p.scale) plt.setScale(p.scale).refreshBody();
@@ -101,6 +105,7 @@
       .sprite(100, 450, "player")
       .setBounce(0.2)
       .setCollideWorldBounds(true);
+
     this.physics.add.collider(this.player, this.platforms);
     this.cameras.main.startFollow(this.player);
 
@@ -149,6 +154,8 @@
         .create(pos.x, pos.y, "goomba")
         .setScale(0.1)
         .setCollideWorldBounds(true);
+
+      // ensure a clear patrol speed
       const speed = Phaser.Math.Between(50, 100);
       const dir = Phaser.Math.Between(0, 1) ? 1 : -1;
       e.setVelocityX(speed * dir);
@@ -158,12 +165,28 @@
     });
     this.physics.add.collider(this.enemies, this.platforms);
 
-    // ── flag ───────────────────────────────────────────────────────────────────
-    const flagX = WORLD_WIDTH - 50;
-    this.flag = this.physics.add.staticSprite(flagX, 518, "flag").setScale(0.5);
+    // ── win flag at proper spot ────────────────────────────────────────────────
+    // floor top is at y = 584 - (32/2) = 568
+    const floorTop = 568;
+    const flagX = WORLD_WIDTH - 50; // tweak left/right
+    // place flag so its bottom rests on the floor
+    this.flag = this.physics.add.staticImage(flagX, 0, "flag").setScale(0.2);
+
+    // now we know displayHeight → compute Y so flag sits atop floor
+    const halfFlag = this.flag.displayHeight / 2;
+    this.flag.setY(floorTop - halfFlag);
+    this.flag.refreshBody(); // sync its body to the new scale & position
+
+    // border around the visible flag
+    const b = this.flag.getBounds();
+    this.add
+      .graphics({ lineStyle: { width: 2, color: 0xff0000 } })
+      .setScrollFactor(1)
+      .strokeRect(b.x, b.y, b.width, b.height);
+
     this.physics.add.overlap(this.player, this.flag, reachFlag, null, this);
 
-    // ── stomp vs hit ───────────────────────────────────────────────────────────
+    // ── stomp vs. hit ──────────────────────────────────────────────────────────
     this.physics.add.overlap(
       this.player,
       this.enemies,
@@ -187,6 +210,7 @@
     this.timerText = this.add
       .text(16, 16, "Time: 0s", { fontSize: "24px", fill: "#ffffff" })
       .setScrollFactor(0);
+
     this.add
       .text(600, 16, "Press R to restart", {
         fontSize: "18px",
@@ -201,6 +225,7 @@
   function update() {
     if (this.isDead || this.levelComplete) return;
 
+    // movement
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-160).anims.play("left", true);
     } else if (this.cursors.right.isDown) {
@@ -212,10 +237,12 @@
       this.player.setVelocityY(-330);
     }
 
+    // fall‐death
     if (this.player.y > WORLD_HEIGHT) {
       triggerDeath.call(this);
     }
 
+    // update timer
     const elapsed = Math.floor((this.time.now - this.startTime) / 1000);
     this.timerText.setText(`Time: ${elapsed}s`);
   }
@@ -240,11 +267,6 @@
     } catch (e) {
       console.error(e);
     }
-
-    const needed = levelConfigs[currentLevel].trophies.repeat + 1;
-    if (collectedThisLevel >= needed) {
-      // optionally auto‐advance or leave win until flag
-    }
   }
 
   function triggerDeath() {
@@ -258,11 +280,7 @@
         cam.scrollX + cam.width / 2,
         cam.height / 2,
         "💀 You died! Click to retry",
-        {
-          fontSize: "32px",
-          fill: "#ffffff",
-          backgroundColor: "#000000",
-        }
+        { fontSize: "32px", fill: "#ffffff", backgroundColor: "#000000" }
       )
       .setOrigin(0.5)
       .setInteractive()
@@ -288,10 +306,10 @@
     const cam = this.cameras.main;
     const isLast = currentLevel >= levelConfigs.length - 1;
     const msg = isLast
-      ? `🎉 Game over! Your time: ${elapsed}s\nClick to restart.`
+      ? `🎉 Game Won! Your time: ${elapsed}s & ${totalCollected} trophies\nClick to restart.`
       : `🏁 Level ${
           currentLevel + 1
-        } complete!\nTime: ${elapsed}s\nClick to continue.`;
+        } complete!\nTime: ${elapsed}s & ${totalCollected} trophies\nClick to continue.`;
 
     this.add
       .text(cam.scrollX + cam.width / 2, cam.height / 2, msg, {

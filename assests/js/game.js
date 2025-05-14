@@ -93,7 +93,6 @@
       .create(WORLD_WIDTH / 2, 584, "ground")
       .setDisplaySize(WORLD_WIDTH, 32)
       .refreshBody();
-
     // floating platforms
     levelConfigs[currentLevel].platforms.forEach((p) => {
       const plt = this.platforms.create(p.x, p.y, "ground");
@@ -105,7 +104,6 @@
       .sprite(100, 450, "player")
       .setBounce(0.2)
       .setCollideWorldBounds(true);
-
     this.physics.add.collider(this.player, this.platforms);
     this.cameras.main.startFollow(this.player);
 
@@ -125,12 +123,17 @@
 
     // ── trophies & score ───────────────────────────────────────────────────────
     const tcfg = levelConfigs[currentLevel].trophies;
-    this.trophies = this.physics.add.group({
-      key: "trophy",
-      repeat: tcfg.repeat,
-      setXY: { x: tcfg.startX, y: tcfg.startY, stepX: tcfg.stepX },
-    });
-    this.trophies.children.iterate((t) => t.setBounceY(0.4).setScale(0.2));
+
+    // build a fresh trophies group each level
+    this.trophies = this.physics.add.group();
+    for (let i = 0; i <= tcfg.repeat; i++) {
+      const x = tcfg.startX + i * tcfg.stepX;
+      this.trophies
+        .create(x, tcfg.startY, "trophy")
+        .setBounceY(Phaser.Math.FloatBetween(0.4, 0.4))
+        .setScale(0.2);
+    }
+
     this.physics.add.collider(this.trophies, this.platforms);
     this.physics.add.overlap(
       this.player,
@@ -140,11 +143,17 @@
       this
     );
 
+    collectedThisLevel = 0;
     this.scoreText = this.add
-      .text(16, 48, `Level ${currentLevel + 1} – Collected: 0 (Total: 0)`, {
-        fontSize: "24px",
-        fill: "#ffffff",
-      })
+      .text(
+        16,
+        48,
+        `Level ${currentLevel + 1} – Collected: 0 (Total: ${totalCollected})`,
+        {
+          fontSize: "24px",
+          fill: "#ffffff",
+        }
+      )
       .setScrollFactor(0);
 
     // ── Goombas ────────────────────────────────────────────────────────────────
@@ -154,8 +163,6 @@
         .create(pos.x, pos.y, "goomba")
         .setScale(0.1)
         .setCollideWorldBounds(true);
-
-      // ensure a clear patrol speed
       const speed = Phaser.Math.Between(50, 100);
       const dir = Phaser.Math.Between(0, 1) ? 1 : -1;
       e.setVelocityX(speed * dir);
@@ -166,18 +173,14 @@
     this.physics.add.collider(this.enemies, this.platforms);
 
     // ── win flag at proper spot ────────────────────────────────────────────────
-    // floor top is at y = 584 - (32/2) = 568
-    const floorTop = 568;
-    const flagX = WORLD_WIDTH - 50; // tweak left/right
-    // place flag so its bottom rests on the floor
-    this.flag = this.physics.add.staticImage(flagX, 0, "flag").setScale(0.2);
-
-    // now we know displayHeight → compute Y so flag sits atop floor
+    const floorTop = 568; // 584 - half platform height
+    const flagX = WORLD_WIDTH - 50;
+    this.flag = this.physics.add.staticImage(flagX, 0, "flag").setScale(0.24);
     const halfFlag = this.flag.displayHeight / 2;
     this.flag.setY(floorTop - halfFlag);
-    this.flag.refreshBody(); // sync its body to the new scale & position
+    this.flag.refreshBody();
 
-    // border around the visible flag
+    // draw border around visible flag
     const b = this.flag.getBounds();
     this.add
       .graphics({ lineStyle: { width: 2, color: 0xff0000 } })
@@ -210,7 +213,6 @@
     this.timerText = this.add
       .text(16, 16, "Time: 0s", { fontSize: "24px", fill: "#ffffff" })
       .setScrollFactor(0);
-
     this.add
       .text(600, 16, "Press R to restart", {
         fontSize: "18px",
@@ -306,10 +308,10 @@
     const cam = this.cameras.main;
     const isLast = currentLevel >= levelConfigs.length - 1;
     const msg = isLast
-      ? `🎉 Game Won! Your time: ${elapsed}s & ${totalCollected} trophies\nClick to restart.`
+      ? `🎉 Game over! Your time: ${elapsed}s\nClick to restart.`
       : `🏁 Level ${
           currentLevel + 1
-        } complete!\nTime: ${elapsed}s & ${totalCollected} trophies\nClick to continue.`;
+        } complete!\nTime: ${elapsed}s\nClick to continue.`;
 
     this.add
       .text(cam.scrollX + cam.width / 2, cam.height / 2, msg, {

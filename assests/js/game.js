@@ -22,11 +22,11 @@
     },
     {
       platforms: [
-        { x: 500, y: 350 },
-        { x: 900, y: 500 },
-        { x: 1200, y: 100 },
-        { x: 1300, y: 200 },
-        { x: 1500, y: 350 },
+        { x: 500, y: 350, tileCount: 10 },
+        { x: 900, y: 500, tileCount: 8 },
+        { x: 1200, y: 100, tileCount: 8 },
+        { x: 1300, y: 200, tileCount: 8 },
+        { x: 1500, y: 350, tileCount: 8 },
       ],
       trophies: { repeat: 10, startX: 200, startY: 0, stepX: 100 },
       enemies: [

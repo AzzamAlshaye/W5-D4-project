@@ -1,228 +1,300 @@
-//IMPORTANT: Make sure to use Kaboom version 0.5.0 for this game by adding the correct script tag in the HTML file.
+// game.js
+(() => {
+  const apiBase = "https://68243c9365ba0580339965d9.mockapi.io/login";
+  const username = localStorage.getItem("username");
+  const userId = localStorage.getItem("userId");
 
-kaboom({
-  global: true,
-  fullscreen: true,
-  scale: 2,
-  debug: true,
-  clearColor: [0, 0, 0, 1],
-});
-
-// Speed identifiers
-const MOVE_SPEED = 120;
-const JUMP_FORCE = 360;
-const BIG_JUMP_FORCE = 550;
-let CURRENT_JUMP_FORCE = JUMP_FORCE;
-const FALL_DEATH = 400;
-const ENEMY_SPEED = 20;
-
-// Game logic
-
-let isJumping = true;
-
-loadRoot("https://i.imgur.com/");
-loadSprite("coin", "wbKxhcd.png");
-loadSprite("evil-shroom", "KPO3fR9.png");
-loadSprite("brick", "pogC9x5.png");
-loadSprite("block", "M6rwarW.png");
-loadSprite("mario", "Wb1qfhK.png");
-loadSprite("mushroom", "0wMd92p.png");
-loadSprite("surprise", "gesQ1KP.png");
-loadSprite("unboxed", "bdrLpi6.png");
-loadSprite("pipe-top-left", "ReTPiWY.png");
-loadSprite("pipe-top-right", "hj2GK4n.png");
-loadSprite("pipe-bottom-left", "c1cYSbt.png");
-loadSprite("pipe-bottom-right", "nqQ79eI.png");
-
-loadSprite("blue-block", "fVscIbn.png");
-loadSprite("blue-brick", "3e5YRQd.png");
-loadSprite("blue-steel", "gqVoI2b.png");
-loadSprite("blue-evil-shroom", "SvV4ueD.png");
-loadSprite("blue-surprise", "RMqCc1G.png");
-
-scene("game", ({ level, score }) => {
-  layers(["bg", "obj", "ui"], "obj");
-
-  const maps = [
-    [
-      "                                      ",
-      "                                      ",
-      "                                      ",
-      "                                      ",
-      "                                      ",
-      "     %   =*=%=                        ",
-      "                                      ",
-      "                            -+        ",
-      "                    ^   ^   ()        ",
-      "==============================   =====",
-    ],
-    [
-      "£                                       £",
-      "£                                       £",
-      "£                                       £",
-      "£                                       £",
-      "£                                       £",
-      "£        @@@@@@              x x        £",
-      "£                          x x x        £",
-      "£                        x x x x  x   -+£",
-      "£               z   z  x x x x x  x   ()£",
-      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-    ],
-  ];
-
-  const levelCfg = {
-    width: 20,
-    height: 20,
-    "=": [sprite("block"), solid()],
-    $: [sprite("coin"), "coin"],
-    "%": [sprite("surprise"), solid(), "coin-surprise"],
-    "*": [sprite("surprise"), solid(), "mushroom-surprise"],
-    "}": [sprite("unboxed"), solid()],
-    "(": [sprite("pipe-bottom-left"), solid(), scale(0.5)],
-    ")": [sprite("pipe-bottom-right"), solid(), scale(0.5)],
-    "-": [sprite("pipe-top-left"), solid(), scale(0.5), "pipe"],
-    "+": [sprite("pipe-top-right"), solid(), scale(0.5), "pipe"],
-    "^": [sprite("evil-shroom"), solid(), "dangerous"],
-    "#": [sprite("mushroom"), solid(), "mushroom", body()],
-    "!": [sprite("blue-block"), solid(), scale(0.5)],
-    "£": [sprite("blue-brick"), solid(), scale(0.5)],
-    z: [sprite("blue-evil-shroom"), solid(), scale(0.5), "dangerous"],
-    "@": [sprite("blue-surprise"), solid(), scale(0.5), "coin-surprise"],
-    x: [sprite("blue-steel"), solid(), scale(0.5)],
-  };
-
-  const gameLevel = addLevel(maps[level], levelCfg);
-
-  const scoreLabel = add([
-    text(score),
-    pos(30, 6),
-    layer("ui"),
-    {
-      value: score,
-    },
-  ]);
-
-  add([text("level " + parseInt(level + 1)), pos(40, 6)]);
-
-  function big() {
-    let timer = 0;
-    let isBig = false;
-    return {
-      update() {
-        if (isBig) {
-          CURRENT_JUMP_FORCE = BIG_JUMP_FORCE;
-          timer -= dt();
-          if (timer <= 0) {
-            this.smallify();
-          }
-        }
-      },
-      isBig() {
-        return isBig;
-      },
-      smallify() {
-        this.scale = vec2(1);
-        CURRENT_JUMP_FORCE = JUMP_FORCE;
-        timer = 0;
-        isBig = false;
-      },
-      biggify(time) {
-        this.scale = vec2(2);
-        timer = time;
-        isBig = true;
-      },
-    };
+  if (!username || !userId) {
+    alert("Please log in to play.");
+    window.location.href = "./login.html";
+    return;
   }
 
-  const player = add([
-    sprite("mario"),
-    solid(),
-    pos(30, 0),
-    body(),
-    big(),
-    origin("bot"),
-  ]);
+  // ─── LEVEL CONFIGS ─────────────────────────────────────────────────────────
+  const levelConfigs = [
+    {
+      platforms: [
+        { x: 400, y: 450 },
+        { x: 700, y: 300 },
+        { x: 1200, y: 450 },
+      ],
+      trophies: { repeat: 5, startX: 150, startY: 0, stepX: 200 },
+      enemies: [
+        { x: 400, y: 350 },
+        { x: 700, y: 250 },
+        { x: 1200, y: 350 },
+      ],
+    },
+    {
+      platforms: [
+        { x: 500, y: 350 },
+        { x: 900, y: 500 },
+        { x: 1200, y: 350 },
+      ],
+      trophies: { repeat: 3, startX: 260, startY: 0, stepX: 300 },
+      enemies: [
+        { x: 500, y: 300 },
+        { x: 900, y: 300 },
+        { x: 800, y: 420 },
+      ],
+    },
+  ];
 
-  action("mushroom", (m) => {
-    m.move(20, 0);
-  });
+  let currentLevel = 0;
+  let collectedThisLevel = 0;
+  let totalCollected = 0;
 
-  player.on("headbump", (obj) => {
-    if (obj.is("coin-surprise")) {
-      gameLevel.spawn("$", obj.gridPos.sub(0, 1));
-      destroy(obj);
-      gameLevel.spawn("}", obj.gridPos.sub(0, 0));
-    }
-    if (obj.is("mushroom-surprise")) {
-      gameLevel.spawn("#", obj.gridPos.sub(0, 1));
-      destroy(obj);
-      gameLevel.spawn("}", obj.gridPos.sub(0, 0));
-    }
-  });
+  const WORLD_WIDTH = 1600;
+  const WORLD_HEIGHT = 600;
 
-  player.collides("mushroom", (m) => {
-    destroy(m);
-    player.biggify(6);
-  });
+  const config = {
+    type: Phaser.AUTO,
+    parent: "game-container",
+    width: 800,
+    height: WORLD_HEIGHT,
+    physics: {
+      default: "arcade",
+      arcade: { gravity: { y: 300 }, debug: false },
+    },
+    scene: { preload, create, update },
+  };
+  new Phaser.Game(config);
 
-  player.collides("coin", (c) => {
-    destroy(c);
-    scoreLabel.value++;
-    scoreLabel.text = scoreLabel.value;
-  });
+  function preload() {
+    this.load.image("sky", "./assests/images/gameBackGround.png");
+    this.load.image(
+      "ground",
+      "https://labs.phaser.io/assets/sprites/platform.png"
+    );
+    this.load.image(
+      "trophy",
+      "https://png.pngtree.com/png-vector/20220824/ourmid/pngtree-star-png-vector-icon-ui-game-png-image_6121753.png"
+    );
+    this.load.spritesheet(
+      "player",
+      "https://labs.phaser.io/assets/sprites/dude.png",
+      { frameWidth: 32, frameHeight: 48 }
+    );
+    this.load.image("goomba", "./assests/images/goomba.png");
+  }
 
-  action("dangerous", (d) => {
-    d.move(-ENEMY_SPEED, 0);
-  });
+  function create() {
+    // 1) background
+    this.add.tileSprite(0, 0, 800, 600, "sky").setOrigin(0).setScrollFactor(0);
 
-  player.collides("dangerous", (d) => {
-    if (isJumping) {
-      destroy(d);
-    } else {
-      go("lose", { score: scoreLabel.value });
-    }
-  });
+    // 2) world bounds & camera
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-  player.action(() => {
-    camPos(player.pos);
-    if (player.pos.y >= FALL_DEATH) {
-      go("lose", { score: scoreLabel.value });
-    }
-  });
-
-  player.collides("pipe", () => {
-    keyPress("down", () => {
-      go("game", {
-        level: (level + 1) % maps.length,
-        score: scoreLabel.value,
-      });
+    // 3) floor & platforms
+    this.platforms = this.physics.add.staticGroup();
+    this.platforms
+      .create(WORLD_WIDTH / 2, 584, "ground")
+      .setDisplaySize(WORLD_WIDTH, 32)
+      .refreshBody();
+    levelConfigs[currentLevel].platforms.forEach((p) => {
+      const plt = this.platforms.create(p.x, p.y, "ground");
+      if (p.scale) plt.setScale(p.scale).refreshBody();
     });
-  });
 
-  keyDown("left", () => {
-    player.move(-MOVE_SPEED, 0);
-  });
+    // 4) player
+    this.player = this.physics.add
+      .sprite(100, 450, "player")
+      .setBounce(0.2)
+      .setCollideWorldBounds(true);
+    this.physics.add.collider(this.player, this.platforms);
+    this.cameras.main.startFollow(this.player);
 
-  keyDown("right", () => {
-    player.move(MOVE_SPEED, 0);
-  });
+    this.anims.create({
+      key: "left",
+      frames: this.anims.generateFrameNumbers("player", { start: 0, end: 3 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "turn",
+      frames: [{ key: "player", frame: 4 }],
+      frameRate: 20,
+    });
+    this.anims.create({
+      key: "right",
+      frames: this.anims.generateFrameNumbers("player", { start: 5, end: 8 }),
+      frameRate: 10,
+      repeat: -1,
+    });
 
-  player.action(() => {
-    if (player.grounded()) {
-      isJumping = false;
+    // 5) trophies
+    const tcfg = levelConfigs[currentLevel].trophies;
+    this.trophies = this.physics.add.group({
+      key: "trophy",
+      repeat: tcfg.repeat,
+      setXY: { x: tcfg.startX, y: tcfg.startY, stepX: tcfg.stepX },
+    });
+    this.trophies.children.iterate((t) => {
+      t.setBounceY(Phaser.Math.FloatBetween(0.4, 0.4)).setScale(0.2);
+    });
+    this.physics.add.collider(this.trophies, this.platforms);
+    this.physics.add.overlap(
+      this.player,
+      this.trophies,
+      collectTrophy,
+      null,
+      this
+    );
+
+    // 6) Goombas
+    this.enemies = this.physics.add.group();
+    levelConfigs[currentLevel].enemies.forEach((pos) => {
+      const e = this.enemies
+        .create(pos.x, pos.y, "goomba")
+        .setScale(0.1)
+        .setCollideWorldBounds(true);
+
+      // ── set a solid patrol speed between 50 and 100px/sec, random direction ──
+      const speed = Phaser.Math.Between(50, 100);
+      const dir = Phaser.Math.Between(0, 1) ? 1 : -1;
+      e.setVelocityX(speed * dir);
+
+      // give an initial bounce
+      e.setVelocityY(-Phaser.Math.Between(50, 100));
+      e.body.allowGravity = true;
+      e.setBounce(1, 0.3);
+    });
+    this.physics.add.collider(this.enemies, this.platforms);
+
+    // 7) single overlap for stomp vs. hit
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      (player, enemy) => {
+        // if falling and player's center is above enemy's center → stomp
+        if (player.body.velocity.y > 0 && player.y < enemy.y) {
+          enemy.disableBody(true, true);
+          player.setVelocityY(-300);
+        } else {
+          // any other overlap → player dies
+          triggerDeath.call(this);
+        }
+      },
+      null,
+      this
+    );
+
+    // 8) controls & HUD
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.scoreText = this.add
+      .text(16, 16, `Level 1 – Collected: 0 (Total: 0)`, {
+        fontSize: "24px",
+        fill: "#ffffff",
+      })
+      .setScrollFactor(0);
+
+    this.isDead = false;
+    this.levelComplete = false;
+  }
+
+  function update() {
+    if (this.isDead || this.levelComplete) return;
+
+    if (this.cursors.left.isDown) {
+      this.player.setVelocityX(-160).anims.play("left", true);
+    } else if (this.cursors.right.isDown) {
+      this.player.setVelocityX(160).anims.play("right", true);
+    } else {
+      this.player.setVelocityX(0).anims.play("turn");
     }
-  });
-
-  keyPress("space", () => {
-    if (player.grounded()) {
-      isJumping = true;
-      player.jump(CURRENT_JUMP_FORCE);
+    if (this.cursors.up.isDown && this.player.body.touching.down) {
+      this.player.setVelocityY(-330);
     }
-  });
-});
 
-scene("lose", ({ score }) => {
-  add([text(score, 32), origin("center"), pos(width() / 2, height() / 2)]);
-});
+    if (this.player.y > WORLD_HEIGHT) {
+      triggerDeath.call(this);
+    }
+  }
 
-start("game", { level: 0, score: 0 });
+  // ─── handlers ────────────────────────────────────────────────────────────────
+
+  async function collectTrophy(player, trophy) {
+    trophy.disableBody(true, true);
+    collectedThisLevel++;
+    totalCollected++;
+    this.scoreText.setText(
+      `Level ${
+        currentLevel + 1
+      } – Collected: ${collectedThisLevel} (Total: ${totalCollected})`
+    );
+    await updateTrophiesOnServer(totalCollected);
+
+    const needed = levelConfigs[currentLevel].trophies.repeat + 1;
+    if (collectedThisLevel >= needed) {
+      triggerLevelComplete.call(this);
+    }
+  }
+
+  function triggerDeath() {
+    this.isDead = true;
+    this.physics.pause();
+    this.player.setTint(0xff0000);
+    const cam = this.cameras.main;
+    this.add
+      .text(
+        cam.scrollX + cam.width / 2,
+        cam.height / 2,
+        "💀 You died! Click to retry",
+        { fontSize: "32px", fill: "#ffffff", backgroundColor: "#000" }
+      )
+      .setOrigin(0.5)
+      .setInteractive()
+      .on("pointerdown", () => {
+        currentLevel = 0;
+        collectedThisLevel = 0;
+        totalCollected = 0;
+        this.scene.restart();
+      });
+  }
+
+  function triggerLevelComplete() {
+    this.levelComplete = true;
+    this.physics.pause();
+    const cam = this.cameras.main;
+    const isLast = currentLevel >= levelConfigs.length - 1;
+    const text = isLast
+      ? "🎉 All levels done! Click to try again"
+      : `✅ Level ${currentLevel + 1} complete!`;
+
+    const msg = this.add
+      .text(cam.scrollX + cam.width / 2, cam.height / 2, text, {
+        fontSize: "32px",
+        fill: "#fff",
+        backgroundColor: "#000",
+      })
+      .setOrigin(0.5);
+
+    if (isLast) {
+      msg.setInteractive().on("pointerdown", () => {
+        currentLevel = 0;
+        collectedThisLevel = 0;
+        totalCollected = 0;
+        this.scene.restart();
+      });
+    } else {
+      this.time.delayedCall(2000, () => {
+        currentLevel++;
+        collectedThisLevel = 0;
+        this.scene.restart();
+      });
+    }
+  }
+
+  async function updateTrophiesOnServer(count) {
+    try {
+      await fetch(`${apiBase}/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trophies: count }),
+      });
+    } catch (err) {
+      console.error("Failed to update trophies:", err);
+    }
+  }
+})();

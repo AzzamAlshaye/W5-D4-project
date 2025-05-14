@@ -1,3 +1,4 @@
+// game.js
 (() => {
   const apiBase = "https://68243c9365ba0580339965d9.mockapi.io/login";
   const username = localStorage.getItem("username");
@@ -12,7 +13,6 @@
   // ─── LEVEL CONFIGS ─────────────────────────────────────────────────────────
   const levelConfigs = [
     {
-      // floating platforms
       platforms: [
         { x: 400, y: 450 },
         { x: 700, y: 300 },
@@ -21,17 +21,20 @@
       trophies: { repeat: 5, startX: 150, startY: 0, stepX: 200 },
       enemies: [
         { x: 400, y: 350 },
+        { x: 700, y: 250 },
         { x: 1200, y: 350 },
       ],
     },
     {
       platforms: [
         { x: 500, y: 350 },
-        { x: 900, y: 450 },
+        { x: 900, y: 500 },
+        { x: 1200, y: 350 },
       ],
-      trophies: { repeat: 3, startX: 200, startY: 0, stepX: 300 },
+      trophies: { repeat: 3, startX: 260, startY: 0, stepX: 300 },
       enemies: [
-        { x: 450, y: 320 },
+        { x: 500, y: 300 },
+        { x: 900, y: 300 },
         { x: 800, y: 420 },
       ],
     },
@@ -58,7 +61,6 @@
   new Phaser.Game(config);
 
   function preload() {
-    this.load.tilemapTiledJSON; // ensure Phaser.TileSprite plugin is loaded
     this.load.image("sky", "./assests/images/gameBackGround.png");
     this.load.image(
       "ground",
@@ -77,33 +79,32 @@
   }
 
   function create() {
-    // 1) background that always covers the camera view
+    // 1) background
     this.add.tileSprite(0, 0, 800, 600, "sky").setOrigin(0).setScrollFactor(0);
 
     // 2) world bounds & camera
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // 3) full‐width floor
+    // 3) floor & platforms
     this.platforms = this.physics.add.staticGroup();
-    const floor = this.platforms.create(WORLD_WIDTH / 2, 584, "ground");
-    floor.setDisplaySize(WORLD_WIDTH, 32).refreshBody();
-
-    // 4) floating platforms
+    this.platforms
+      .create(WORLD_WIDTH / 2, 584, "ground")
+      .setDisplaySize(WORLD_WIDTH, 32)
+      .refreshBody();
     levelConfigs[currentLevel].platforms.forEach((p) => {
       const plt = this.platforms.create(p.x, p.y, "ground");
       if (p.scale) plt.setScale(p.scale).refreshBody();
     });
 
-    // 5) player setup
+    // 4) player
     this.player = this.physics.add
       .sprite(100, 450, "player")
       .setBounce(0.2)
       .setCollideWorldBounds(true);
     this.physics.add.collider(this.player, this.platforms);
-    this.cameras.main.startFollow(this.player); // instant follow
+    this.cameras.main.startFollow(this.player);
 
-    // player animations
     this.anims.create({
       key: "left",
       frames: this.anims.generateFrameNumbers("player", { start: 0, end: 3 }),
@@ -122,7 +123,7 @@
       repeat: -1,
     });
 
-    // 6) trophies
+    // 5) trophies
     const tcfg = levelConfigs[currentLevel].trophies;
     this.trophies = this.physics.add.group({
       key: "trophy",
@@ -141,31 +142,44 @@
       this
     );
 
-    // 7) Goombas
+    // 6) Goombas
     this.enemies = this.physics.add.group();
     levelConfigs[currentLevel].enemies.forEach((pos) => {
       const e = this.enemies
         .create(pos.x, pos.y, "goomba")
         .setScale(0.1)
         .setCollideWorldBounds(true);
-      // give it a random left/right patrol speed
-      e.setVelocityX(Phaser.Math.Between(-80, 80));
-
-      // (optional) give it an initial upward kick so it immediately bounces:
+      e.setVelocityX(Phaser.Math.Between(-80, 50));
       e.setVelocityY(-Phaser.Math.Between(50, 100));
+      e.setBounce(1, 0.3);
       e.body.allowGravity = true;
-      e.setBounce(1, 0.4);
     });
-    // allow Goombas to land & bounce on platforms:
     this.physics.add.collider(this.enemies, this.platforms);
-    this.physics.add.collider(this.player, this.enemies, hitEnemy, null, this);
+
+    // 7) single overlap for stomp vs. hit
+    this.physics.add.overlap(
+      this.player,
+      this.enemies,
+      (player, enemy) => {
+        // if falling and player's center is above enemy's center → stomp
+        if (player.body.velocity.y > 0 && player.y < enemy.y) {
+          enemy.disableBody(true, true);
+          player.setVelocityY(-300);
+        } else {
+          // any other overlap → player dies
+          triggerDeath.call(this);
+        }
+      },
+      null,
+      this
+    );
 
     // 8) controls & HUD
     this.cursors = this.input.keyboard.createCursorKeys();
     this.scoreText = this.add
-      .text(16, 16, `Level ${currentLevel + 1} – Collected: 0 (Total: 0)`, {
+      .text(16, 16, `Level 1 – Collected: 0 (Total: 0)`, {
         fontSize: "24px",
-        fill: "#000",
+        fill: "#ffffff",
       })
       .setScrollFactor(0);
 
@@ -176,7 +190,6 @@
   function update() {
     if (this.isDead || this.levelComplete) return;
 
-    // movement
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-160).anims.play("left", true);
     } else if (this.cursors.right.isDown) {
@@ -188,13 +201,13 @@
       this.player.setVelocityY(-330);
     }
 
-    // fall‐death
     if (this.player.y > WORLD_HEIGHT) {
       triggerDeath.call(this);
     }
   }
 
-  // collect trophies
+  // ─── handlers ────────────────────────────────────────────────────────────────
+
   async function collectTrophy(player, trophy) {
     trophy.disableBody(true, true);
     collectedThisLevel++;
@@ -212,17 +225,6 @@
     }
   }
 
-  // player ↔ Goomba collision
-  function hitEnemy(player, enemy) {
-    if (player.body.velocity.y > 0) {
-      enemy.disableBody(true, true);
-      player.setVelocityY(-150);
-    } else {
-      triggerDeath.call(this);
-    }
-  }
-
-  // death
   function triggerDeath() {
     this.isDead = true;
     this.physics.pause();
@@ -233,7 +235,7 @@
         cam.scrollX + cam.width / 2,
         cam.height / 2,
         "💀 You died! Click to retry",
-        { fontSize: "32px", fill: "#fff", backgroundColor: "#000" }
+        { fontSize: "32px", fill: "#ffffff", backgroundColor: "#000" }
       )
       .setOrigin(0.5)
       .setInteractive()
@@ -245,7 +247,6 @@
       });
   }
 
-  // level complete & auto‐advance
   function triggerLevelComplete() {
     this.levelComplete = true;
     this.physics.pause();
@@ -279,7 +280,6 @@
     }
   }
 
-  // server update
   async function updateTrophiesOnServer(count) {
     try {
       await fetch(`${apiBase}/${userId}`, {

@@ -4,9 +4,47 @@
   const userId = localStorage.getItem("userId");
 
   if (!username || !userId) {
-    alert("Please log in to play.");
-    window.location.href = "./login.html";
-    return;
+    // Grab the container and ensure it can be overlaid
+    const container = document.getElementById("game-container");
+    container.style.position = "relative";
+
+    // Create the semi-transparent overlay
+    const overlay = document.createElement("div");
+    Object.assign(overlay.style, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      background: "rgba(0, 0, 0, 0.8)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: "9999",
+      color: "#fff",
+      fontSize: "24px",
+      textAlign: "center",
+      padding: "1rem",
+      boxSizing: "border-box",
+    });
+    overlay.textContent = "🔒 You must be logged in to play.";
+
+    // (Optional) Add a button to go to login
+    const btn = document.createElement("button");
+    btn.textContent = "Go to Login";
+    Object.assign(btn.style, {
+      marginTop: "1rem",
+      padding: "0.5rem 1rem",
+      fontSize: "18px",
+      cursor: "pointer",
+    });
+    btn.addEventListener("click", () => {
+      window.location.href = "./login.html";
+    });
+    overlay.appendChild(btn);
+
+    container.appendChild(overlay);
+    return; // stop loading the rest of the game
   }
 
   // ─── CONSTANTS ──────────────────────────────────────────────────────────────

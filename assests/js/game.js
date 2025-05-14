@@ -17,22 +17,33 @@
         { x: 400, y: 450 },
         { x: 700, y: 300 },
         { x: 1200, y: 450 },
+        { x: 1500, y: 200 },
+        { x: 1750, y: 100 },
       ],
-      trophies: { repeat: 5, startX: 150, startY: 0, stepX: 200 },
+      trophies: { repeat: 10, startX: 150, startY: 0, stepX: 200 },
       enemies: [
         { x: 400, y: 350 },
+        { x: 600, y: 350 },
         { x: 1200, y: 350 },
+        { x: 1500, y: 350 },
       ],
     },
     {
       platforms: [
         { x: 500, y: 350 },
-        { x: 900, y: 450 },
+        { x: 900, y: 500 },
+        { x: 1200, y: 100 },
+        { x: 1300, y: 200 },
+        { x: 1500, y: 350 },
       ],
-      trophies: { repeat: 3, startX: 200, startY: 0, stepX: 300 },
+      trophies: { repeat: 10, startX: 200, startY: 0, stepX: 100 },
       enemies: [
         { x: 450, y: 320 },
         { x: 800, y: 420 },
+        { x: 800, y: 420 },
+        { x: 800, y: 420 },
+        { x: 800, y: 420 },
+        { x: 1200, y: 420 },
       ],
     },
   ];
@@ -41,7 +52,7 @@
   let collectedThisLevel = 0;
   let totalCollected = 0;
 
-  const WORLD_WIDTH = 1600;
+  const WORLD_WIDTH = 2500;
   const WORLD_HEIGHT = 600;
 
   const config = {
@@ -59,11 +70,11 @@
 
   function preload() {
     this.load.tilemapTiledJSON; // ensure Phaser.TileSprite plugin is loaded
-    this.load.image("sky", "./assests/images/gameBackGround.png");
-    this.load.image(
-      "ground",
-      "https://labs.phaser.io/assets/sprites/platform.png"
-    );
+    this.load.image("sky", "./assests/images/bg2.svg", {
+      backgroundColor: "red",
+    });
+
+    this.load.image("ground", "./assests/images/ground.png");
     this.load.image(
       "trophy",
       "https://png.pngtree.com/png-vector/20220824/ourmid/pngtree-star-png-vector-icon-ui-game-png-image_6121753.png"
@@ -78,7 +89,10 @@
 
   function create() {
     // 1) background that always covers the camera view
-    this.add.tileSprite(0, 0, 800, 600, "sky").setOrigin(0).setScrollFactor(0);
+    this.add
+      .image(0, 0, "sky")
+      .setOrigin(0)
+      .setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
 
     // 2) world bounds & camera
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -216,7 +230,7 @@
   function hitEnemy(player, enemy) {
     if (player.body.velocity.y > 0) {
       enemy.disableBody(true, true);
-      player.setVelocityY(-150);
+      player.setVelocityY(100);
     } else {
       triggerDeath.call(this);
     }
@@ -233,7 +247,11 @@
         cam.scrollX + cam.width / 2,
         cam.height / 2,
         "💀 You died! Click to retry",
-        { fontSize: "32px", fill: "#fff", backgroundColor: "#000" }
+        {
+          fontSize: "32px",
+          fill: "#fff",
+          backgroundColor: "#000",
+        }
       )
       .setOrigin(0.5)
       .setInteractive()

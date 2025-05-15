@@ -4,18 +4,24 @@
     <meta charset="UTF-8" />
     <title>Mario-Style Game</title>
     <style>
+      html,
       body {
         margin: 0;
+        padding: 0;
+        height: 100vh; /* so flex centering can work vertically */
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
       #game-container {
-        width: 100vw;
-        height: 100vh;
+        width: 800px; /* your canvas width */
+        height: 600px; /* your canvas height */
         overflow: hidden;
       }
     </style>
   </head>
   <body>
-    <div id="game-container"></div>
+    <section id="game-section"><div id="game-container"></div></section>
 
     <!-- Phaser 3 library -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>

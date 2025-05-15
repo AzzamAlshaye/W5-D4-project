@@ -1,5 +1,5 @@
 body {
-
+  background-color: #e4ecef;
   color: #000; /* make sure text is readable */
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   padding-top: 3rem;
@@ -7,7 +7,7 @@ body {
 
 /* 1. Navbar background */
 .navbar-main {
-  background-color: #016a9f; /* Dark Teal */
+  background-color: #b5411a; /* Dark Teal */
   border-bottom-right-radius: 0.5rem;
   border-bottom-left-radius: 0.5rem;
 }

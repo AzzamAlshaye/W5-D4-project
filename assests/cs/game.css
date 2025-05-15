@@ -1,12 +1,3 @@
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh; /* so flex centering can work vertically */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 #game-container {
   width: 800px; /* your canvas width */
   height: 600px; /* your canvas height */
